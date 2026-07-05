@@ -12,7 +12,8 @@ Terminal Watcher streams the output of a terminal command from a desktop machine
 
 ## Build environment constraints (important)
 
-- This machine (Windows) has NO Android SDK. The Android target and plugin of `:mobile` are applied conditionally in `mobile/build.gradle.kts` only when a SDK is detected (`local.properties` sdk.dir, `ANDROID_HOME`, or `ANDROID_SDK_ROOT`). Never assume `:mobile:assembleDebug` can run here.
+- This machine (Windows) has NO Android SDK. The Android target and plugin of `:mobile` are applied conditionally in `mobile/build.gradle.kts` only when a SDK is detected (`local.properties` sdk.dir, `ANDROID_HOME`, or `ANDROID_SDK_ROOT`) and `-PenableAndroid=false` is not passed. Never assume `:mobile:assembleDebug` can run here.
+- CI (`.github/workflows/ci.yml`): the build-and-test matrix (ubuntu + windows) runs `gradlew build -PenableAndroid=false` because hosted runners DO ship an Android SDK; a separate non-blocking `android-app` job builds the APK. Keep the main job's command in sync with what is green locally.
 - iOS targets (in `core` and `mobile`) are enabled only on macOS hosts, guarded by an os.name check in the build scripts.
 - Everything else - `core`, `desktop`, and the `preview` JVM target of `mobile` (which compiles the entire shared UI) - builds and tests on this machine. `gradlew build` must stay green here.
 - Toolchain: Gradle 9.3 (wrapper), Kotlin 2.2.20, JDK 25 installed (bytecode targets 17). Versions live in `gradle/libs.versions.toml`.

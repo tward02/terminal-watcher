@@ -10,15 +10,18 @@ plugins {
 
 // The Android target needs an installed Android SDK to configure. Detect it so the
 // rest of the project (core, desktop, and the JVM preview of this app) builds on
-// machines without one. See README "Building the mobile app".
+// machines without one. Pass -PenableAndroid=false to force it off even when an
+// SDK exists (used by CI to run the same build everywhere). See README
+// "Building the mobile app".
 val androidSdkDir: String? = run {
     val localProps = rootProject.file("local.properties")
     val fromLocalProps = if (localProps.exists()) {
         Properties().apply { localProps.inputStream().use { load(it) } }.getProperty("sdk.dir")
     } else null
-    fromLocalProps ?: System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+    (fromLocalProps ?: System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT"))
+        ?.takeIf { it.isNotBlank() }
 }
-val androidEnabled = androidSdkDir != null
+val androidEnabled = androidSdkDir != null && findProperty("enableAndroid")?.toString() != "false"
 
 if (androidEnabled) {
     apply(plugin = libs.plugins.android.application.get().pluginId)

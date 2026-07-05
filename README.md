@@ -204,6 +204,8 @@ gradlew :mobile:previewTest  # mobile shared-code tests (JVM)
 
 The test suite covers the hook engine, template rendering, protocol round-trips, config parsing, the ring buffer, CLI parsing, real child-process capture, the WebSocket server end to end, the reconnecting client against a live server, and the app view model.
 
+Continuous integration (`.github/workflows/ci.yml`) runs the full build and test suite on Linux and Windows for every pull request and every push to main. Because GitHub-hosted runners include an Android SDK, the main CI job passes `-PenableAndroid=false` to run the same build as a developer machine without one; a separate job builds the Android APK and uploads it as an artifact.
+
 ## Current limitations and roadmap
 
 - Notifications are delivered over the open WebSocket connection, so the app must be running (foreground, or background for as long as the OS keeps the socket alive). True offline push (FCM and APNs) needs a relay backend and is the natural next step; the `notify` action is already the single place such a relay would plug in.
