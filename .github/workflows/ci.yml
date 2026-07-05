@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-test:
+    name: Build and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # enableAndroid=false because hosted runners ship an Android SDK, which would
+      # otherwise switch on the :mobile Android target; this job runs the same
+      # build that developer machines without an SDK run (core, desktop, and the
+      # JVM preview target of :mobile, plus every test suite).
+      - name: Build and test
+        shell: bash
+        run: ./gradlew build -PenableAndroid=false --stacktrace
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
+
+  android-app:
+    name: Android app (best effort)
+    runs-on: ubuntu-latest
+    # The Android target cannot be built on the development machine, so this job
+    # is the only place it compiles. Non-blocking until it has proven stable;
+    # remove continue-on-error once it is green.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble debug APK
+        run: ./gradlew :mobile:assembleDebug --stacktrace
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-debug-apk
+          path: mobile/build/outputs/apk/debug/*.apk
+          retention-days: 7
